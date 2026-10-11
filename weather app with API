@@ -1,0 +1,1741 @@
+import javax.swing.*;
+		import java.awt.*;
+		import java.awt.geom.*;
+		import java.net.URI;
+		import java.net.URLEncoder;
+		import java.net.http.HttpClient;
+		import java.net.http.HttpRequest;
+		import java.net.http.HttpResponse;
+		import java.nio.charset.StandardCharsets;
+		import java.time.LocalDate;
+		import java.time.format.DateTimeFormatter;
+		import java.util.Random;
+		import java.util.regex.Matcher;
+		import java.util.regex.Pattern;
+		public class weatherapp {
+
+		    // =========================================================
+		    // MAIN
+		    // =========================================================
+
+		    public static void main(String[] args) {
+
+		        SwingUtilities.invokeLater(() -> {
+
+		            try {
+		                UIManager.setLookAndFeel(
+		                        UIManager.getSystemLookAndFeelClassName()
+		                );
+		            } catch (Exception ignored) {
+		            }
+
+		            new WeatherWindow();
+		        });
+		    }
+
+
+		    // =========================================================
+		    // WEATHER WINDOW
+		    // =========================================================
+
+		    static class WeatherWindow extends JFrame {
+
+		        JTextField cityField;
+		        JTextField dateField;
+
+		        JButton searchButton;
+
+		        JLabel locationLabel;
+		        JLabel conditionLabel;
+		        JLabel temperatureLabel;
+		        JLabel detailsLabel;
+
+		        WeatherAnimationPanel animationPanel;
+
+		        DateTimeFormatter inputFormat =
+		                DateTimeFormatter.ofPattern("dd-MM-yyyy");
+
+		        DateTimeFormatter apiFormat =
+		                DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+
+		        WeatherWindow() {
+
+		            setTitle("Weather Application");
+
+		            setSize(1000, 700);
+
+		            setDefaultCloseOperation(
+		                    JFrame.EXIT_ON_CLOSE
+		            );
+
+		            setLocationRelativeTo(null);
+
+		            createUI();
+
+		            setVisible(true);
+		        }
+
+
+		        // =====================================================
+		        // CREATE GUI
+		        // =====================================================
+
+		        void createUI() {
+
+		            JPanel mainPanel = new JPanel(
+		                    new BorderLayout()
+		            );
+
+		            mainPanel.setBackground(
+		                    new Color(235, 242, 250)
+		            );
+
+
+		            // -------------------------------------------------
+		            // TOP PANEL
+		            // -------------------------------------------------
+
+		            JPanel topPanel = new JPanel();
+
+		            topPanel.setBackground(
+		                    new Color(235, 242, 250)
+		            );
+
+		            topPanel.setBorder(
+		                    BorderFactory.createEmptyBorder(
+		                            20, 20, 10, 20
+		                    )
+		            );
+
+
+		            JLabel title = new JLabel(
+		                    "WEATHER APPLICATION"
+		            );
+
+		            title.setFont(
+		                    new Font(
+		                            "Arial",
+		                            Font.BOLD,
+		                            30
+		                    )
+		            );
+
+
+		            JLabel cityLabel =
+		                    new JLabel("City:");
+
+		            cityLabel.setFont(
+		                    new Font(
+		                            "Arial",
+		                            Font.BOLD,
+		                            16
+		                    )
+		            );
+
+
+		            cityField = new JTextField(
+		                    "Chennai",
+		                    15
+		            );
+
+		            cityField.setFont(
+		                    new Font(
+		                            "Arial",
+		                            Font.PLAIN,
+		                            16
+		                    )
+		            );
+
+
+		            JLabel dateLabel =
+		                    new JLabel("Date:");
+
+		            dateLabel.setFont(
+		                    new Font(
+		                            "Arial",
+		                            Font.BOLD,
+		                            16
+		                    )
+		            );
+
+
+		            dateField = new JTextField(
+		                    LocalDate.now()
+		                            .format(inputFormat),
+		                    10
+		            );
+
+		            dateField.setFont(
+		                    new Font(
+		                            "Arial",
+		                            Font.PLAIN,
+		                            16
+		                    )
+		            );
+
+
+		            searchButton = new JButton(
+		                    "SEARCH"
+		            );
+
+		            searchButton.setFont(
+		                    new Font(
+		                            "Arial",
+		                            Font.BOLD,
+		                            15
+		                    )
+		            );
+
+
+		            topPanel.add(title);
+		            topPanel.add(Box.createHorizontalStrut(30));
+
+		            topPanel.add(cityLabel);
+		            topPanel.add(cityField);
+
+		            topPanel.add(dateLabel);
+		            topPanel.add(dateField);
+
+		            topPanel.add(searchButton);
+
+
+		            mainPanel.add(
+		                    topPanel,
+		                    BorderLayout.NORTH
+		            );
+
+
+		            // -------------------------------------------------
+		            // ANIMATION PANEL
+		            // -------------------------------------------------
+
+		            animationPanel =
+		                    new WeatherAnimationPanel();
+
+		            mainPanel.add(
+		                    animationPanel,
+		                    BorderLayout.CENTER
+		            );
+
+
+		            // -------------------------------------------------
+		            // RESULT PANEL
+		            // -------------------------------------------------
+
+		            JPanel resultPanel = new JPanel();
+
+		            resultPanel.setLayout(
+		                    new BoxLayout(
+		                            resultPanel,
+		                            BoxLayout.Y_AXIS
+		                    )
+		            );
+
+		            resultPanel.setBackground(
+		                    new Color(235, 242, 250)
+		            );
+
+
+		            locationLabel =
+		                    new JLabel("Enter city and date");
+
+		            locationLabel.setAlignmentX(
+		                    Component.CENTER_ALIGNMENT
+		            );
+
+		            locationLabel.setFont(
+		                    new Font(
+		                            "Arial",
+		                            Font.BOLD,
+		                            22
+		                    )
+		            );
+
+
+		            conditionLabel =
+		                    new JLabel("Weather condition");
+
+		            conditionLabel.setAlignmentX(
+		                    Component.CENTER_ALIGNMENT
+		            );
+
+		            conditionLabel.setFont(
+		                    new Font(
+		                            "Arial",
+		                            Font.BOLD,
+		                            20
+		                    )
+		            );
+
+
+		            temperatureLabel =
+		                    new JLabel("Temperature");
+
+		            temperatureLabel.setAlignmentX(
+		                    Component.CENTER_ALIGNMENT
+		            );
+
+		            temperatureLabel.setFont(
+		                    new Font(
+		                            "Arial",
+		                            Font.BOLD,
+		                            28
+		                    )
+		            );
+
+
+		            detailsLabel =
+		                    new JLabel(" ");
+
+		            detailsLabel.setAlignmentX(
+		                    Component.CENTER_ALIGNMENT
+		            );
+
+		            detailsLabel.setFont(
+		                    new Font(
+		                            "Arial",
+		                            Font.PLAIN,
+		                            15
+		                    )
+		            );
+
+
+		            resultPanel.add(
+		                    locationLabel
+		            );
+
+		            resultPanel.add(
+		                    conditionLabel
+		            );
+
+		            resultPanel.add(
+		                    temperatureLabel
+		            );
+
+		            resultPanel.add(
+		                    detailsLabel
+		            );
+
+
+		            mainPanel.add(
+		                    resultPanel,
+		                    BorderLayout.SOUTH
+		            );
+
+
+		            setContentPane(mainPanel);
+
+
+		            // -------------------------------------------------
+		            // SEARCH BUTTON
+		            // -------------------------------------------------
+
+		            searchButton.addActionListener(
+		                    e -> searchWeather()
+		            );
+		        }
+
+
+		        // =====================================================
+		        // SEARCH WEATHER
+		        // =====================================================
+
+		        void searchWeather() {
+
+		            String city =
+		                    cityField.getText().trim();
+
+		            String dateText =
+		                    dateField.getText().trim();
+
+
+		            if (city.isEmpty()
+		                    || dateText.isEmpty()) {
+
+		                JOptionPane.showMessageDialog(
+		                        this,
+		                        "Please enter City and Date.",
+		                        "Input Error",
+		                        JOptionPane.ERROR_MESSAGE
+		                );
+
+		                return;
+		            }
+
+
+		            LocalDate date;
+
+		            try {
+
+		                date =
+		                        LocalDate.parse(
+		                                dateText,
+		                                inputFormat
+		                        );
+
+		            } catch (Exception ex) {
+
+		                JOptionPane.showMessageDialog(
+		                        this,
+		                        "Date format must be DD-MM-YYYY",
+		                        "Invalid Date",
+		                        JOptionPane.ERROR_MESSAGE
+		                );
+
+		                return;
+		            }
+
+
+		            searchButton.setEnabled(false);
+
+		            locationLabel.setText(
+		                    "Searching..."
+		            );
+
+		            conditionLabel.setText(
+		                    ""
+		            );
+
+		            temperatureLabel.setText(
+		                    ""
+		            );
+
+		            detailsLabel.setText(
+		                    ""
+		            );
+
+
+		            SwingWorker<WeatherData, Void> worker =
+		                    new SwingWorker<>() {
+
+		                @Override
+		                protected WeatherData doInBackground()
+		                        throws Exception {
+
+		                    return getWeather(
+		                            city,
+		                            date
+		                    );
+		                }
+
+
+		                @Override
+		                protected void done() {
+
+		                    searchButton.setEnabled(
+		                            true
+		                    );
+
+		                    try {
+
+		                        WeatherData data =
+		                                get();
+
+		                        showWeather(data);
+
+		                    } catch (Exception ex) {
+
+		                        JOptionPane.showMessageDialog(
+		                                WeatherWindow.this,
+		                                "Unable to get weather.\n\n"
+		                                + ex.getMessage(),
+		                                "Weather Error",
+		                                JOptionPane.ERROR_MESSAGE
+		                        );
+
+		                        locationLabel.setText(
+		                                "Weather search failed"
+		                        );
+		                    }
+		                }
+		            };
+
+
+		            worker.execute();
+		        }
+
+
+		        // =====================================================
+		        // GET WEATHER FROM API
+		        // =====================================================
+
+		        WeatherData getWeather(
+		                String city,
+		                LocalDate date
+		        ) throws Exception {
+
+
+		            String encodedCity =
+		                    URLEncoder.encode(
+		                            city,
+		                            StandardCharsets.UTF_8
+		                    );
+
+
+		            // -------------------------------------------------
+		            // STEP 1: CITY → LATITUDE / LONGITUDE
+		            // -------------------------------------------------
+
+		            String geoUrl =
+		                    "https://geocoding-api.open-meteo.com/v1/search"
+		                    + "?name="
+		                    + encodedCity
+		                    + "&count=1"
+		                    + "&language=en"
+		                    + "&format=json";
+
+
+		            String geoJson =
+		                    httpGet(geoUrl);
+
+
+		            if (!geoJson.contains("\"results\"")) {
+
+		                throw new Exception(
+		                        "City not found."
+		                );
+		            }
+
+
+		            double latitude =
+		                    getDouble(
+		                            geoJson,
+		                            "\"latitude\":"
+		                    );
+
+
+		            double longitude =
+		                    getDouble(
+		                            geoJson,
+		                            "\"longitude\":"
+		                    );
+
+
+		            String foundName =
+		                    getString(
+		                            geoJson,
+		                            "\"name\":\""
+		                    );
+
+
+		            String country =
+		                    getString(
+		                            geoJson,
+		                            "\"country\":\""
+		                    );
+
+
+		            // -------------------------------------------------
+		            // STEP 2: WEATHER DATA
+		            // -------------------------------------------------
+
+		            String apiDate =
+		                    date.format(apiFormat);
+
+
+		            String weatherUrl =
+		                    "https://api.open-meteo.com/v1/forecast"
+		                    + "?latitude="
+		                    + latitude
+		                    + "&longitude="
+		                    + longitude
+		                    + "&daily="
+		                    + "weather_code,"
+		                    + "temperature_2m_max,"
+		                    + "temperature_2m_min,"
+		                    + "precipitation_sum,"
+		                    + "wind_speed_10m_max"
+		                    + "&timezone=auto"
+		                    + "&start_date="
+		                    + apiDate
+		                    + "&end_date="
+		                    + apiDate;
+
+
+		            String weatherJson =
+		                    httpGet(weatherUrl);
+
+
+		            // -------------------------------------------------
+		            // READ FIRST DAILY VALUE
+		            // -------------------------------------------------
+
+		            int weatherCode =
+		                    (int) getFirstArrayNumber(
+		                            weatherJson,
+		                            "\"weather_code\":["
+		                    );
+
+
+		            double maxTemp =
+		                    getFirstArrayNumber(
+		                            weatherJson,
+		                            "\"temperature_2m_max\":["
+		                    );
+
+
+		            double minTemp =
+		                    getFirstArrayNumber(
+		                            weatherJson,
+		                            "\"temperature_2m_min\":["
+		                    );
+
+
+		            double precipitation =
+		                    getFirstArrayNumber(
+		                            weatherJson,
+		                            "\"precipitation_sum\":["
+		                    );
+
+
+		            double wind =
+		                    getFirstArrayNumber(
+		                            weatherJson,
+		                            "\"wind_speed_10m_max\":["
+		                    );
+
+
+		            WeatherData data =
+		                    new WeatherData();
+
+
+		            data.city = foundName;
+		            data.country = country;
+		            data.date = date;
+
+		            data.weatherCode =
+		                    weatherCode;
+
+		            data.maxTemp =
+		                    maxTemp;
+
+		            data.minTemp =
+		                    minTemp;
+
+		            data.precipitation =
+		                    precipitation;
+
+		            data.wind =
+		                    wind;
+
+
+		            return data;
+		        }
+
+
+		        // =====================================================
+		        // SHOW WEATHER
+		        // =====================================================
+
+		        void showWeather(
+		                WeatherData data
+		        ) {
+
+
+		            String condition =
+		                    getCondition(
+		                            data.weatherCode
+		                    );
+
+
+		            locationLabel.setText(
+		                    data.city
+		                    + ", "
+		                    + data.country
+		                    + "  |  "
+		                    + data.date.format(
+		                            inputFormat
+		                    )
+		            );
+
+
+		            conditionLabel.setText(
+		                    condition
+		            );
+
+
+		            temperatureLabel.setText(
+		                    String.format(
+		                            "%.1f°C / %.1f°C",
+		                            data.maxTemp,
+		                            data.minTemp
+		                    )
+		            );
+
+
+		            detailsLabel.setText(
+		                    String.format(
+		                            "Rain: %.1f mm     Wind: %.1f km/h",
+		                            data.precipitation,
+		                            data.wind
+		                    )
+		            );
+
+
+		            animationPanel.setWeather(
+		                    data.weatherCode
+		            );
+		        }
+
+
+		        // =====================================================
+		        // HTTP GET
+		        // =====================================================
+
+		        String httpGet(
+		                String url
+		        ) throws Exception {
+
+
+		            HttpClient client =
+		                    HttpClient.newBuilder()
+		                            .build();
+
+
+		            HttpRequest request =
+		                    HttpRequest.newBuilder()
+		                            .uri(
+		                                    URI.create(url)
+		                            )
+		                            .GET()
+		                            .build();
+
+
+		            HttpResponse<String> response =
+		                    client.send(
+		                            request,
+		                            HttpResponse.BodyHandlers.ofString()
+		                    );
+
+
+		            if (response.statusCode() != 200) {
+
+		                throw new Exception(
+		                        "API error: "
+		                        + response.statusCode()
+		                );
+		            }
+
+
+		            return response.body();
+		        }
+
+
+		        // =====================================================
+		        // JSON HELPERS
+		        // =====================================================
+
+		        double getDouble(
+		                String json,
+		                String key
+		        ) throws Exception {
+
+
+		            Pattern pattern =
+		                    Pattern.compile(
+		                            Pattern.quote(key)
+		                            + "(-?\\d+(?:\\.\\d+)?)"
+		                    );
+
+
+		            Matcher matcher =
+		                    pattern.matcher(json);
+
+
+		            if (matcher.find()) {
+
+		                return Double.parseDouble(
+		                        matcher.group(1)
+		                );
+		            }
+
+
+		            throw new Exception(
+		                    "Weather data not found."
+		            );
+		        }
+
+
+		        double getFirstArrayNumber(
+		                String json,
+		                String key
+		        ) throws Exception {
+
+
+		            Pattern pattern =
+		                    Pattern.compile(
+		                            Pattern.quote(key)
+		                            + "\\s*(-?\\d+(?:\\.\\d+)?)"
+		                    );
+
+
+		            Matcher matcher =
+		                    pattern.matcher(json);
+
+
+		            if (matcher.find()) {
+
+		                return Double.parseDouble(
+		                        matcher.group(1)
+		                );
+		            }
+
+
+		            throw new Exception(
+		                    "Weather value not available."
+		            );
+		        }
+
+
+		        String getString(
+		                String json,
+		                String key
+		        ) {
+
+
+		            int start =
+		                    json.indexOf(key);
+
+
+		            if (start == -1) {
+
+		                return "";
+		            }
+
+
+		            start += key.length();
+
+
+		            int end =
+		                    json.indexOf(
+		                            "\"",
+		                            start
+		                    );
+
+
+		            if (end == -1) {
+
+		                return "";
+		            }
+
+
+		            return json.substring(
+		                    start,
+		                    end
+		            );
+		        }
+		    }
+
+
+		    // =========================================================
+		    // WEATHER DATA
+		    // =========================================================
+
+		    static class WeatherData {
+
+		        String city;
+		        String country;
+
+		        LocalDate date;
+
+		        int weatherCode;
+
+		        double maxTemp;
+		        double minTemp;
+
+		        double precipitation;
+
+		        double wind;
+		    }
+
+
+		    // =========================================================
+		    // WEATHER CONDITION
+		    // =========================================================
+
+		    static String getCondition(
+		            int code
+		    ) {
+
+
+		        if (code == 0) {
+
+		            return "CLEAR SKY";
+		        }
+
+
+		        if (code == 1
+		                || code == 2
+		                || code == 3) {
+
+		            return "CLOUDY";
+		        }
+
+
+		        if (code == 45
+		                || code == 48) {
+
+		            return "FOG";
+		        }
+
+
+		        if (code >= 51
+		                && code <= 57) {
+
+		            return "DRIZZLE";
+		        }
+
+
+		        if (code >= 61
+		                && code <= 67) {
+
+		            return "RAIN";
+		        }
+
+
+		        if (code >= 71
+		                && code <= 77) {
+
+		            return "SNOW";
+		        }
+
+
+		        if (code >= 80
+		                && code <= 82) {
+
+		            return "RAIN SHOWERS";
+		        }
+
+
+		        if (code == 85
+		                || code == 86) {
+
+		            return "SNOW SHOWERS";
+		        }
+
+
+		        if (code >= 95
+		                && code <= 99) {
+
+		            return "THUNDERSTORM";
+		        }
+
+
+		        return "WEATHER";
+		    }
+
+
+		    // =========================================================
+		    // ANIMATION PANEL
+		    // =========================================================
+
+		    static class WeatherAnimationPanel
+		            extends JPanel {
+
+
+		        int weatherCode = 0;
+
+		        Timer timer;
+
+		        Random random =
+		                new Random();
+
+
+		        // Rain
+		        int[] rainX =
+		                new int[120];
+
+		        int[] rainY =
+		                new int[120];
+
+
+		        // Snow
+		        int[] snowX =
+		                new int[80];
+
+		        int[] snowY =
+		                new int[80];
+
+
+		        // Clouds
+		        int cloudMove = 0;
+
+		        // Sun
+		        double sunAngle = 0;
+
+		        // Lightning
+		        boolean lightning = false;
+
+
+		        WeatherAnimationPanel() {
+
+		            setPreferredSize(
+		                    new Dimension(
+		                            1000,
+		                            400
+		                    )
+		            );
+
+
+		            for (int i = 0;
+		                 i < rainX.length;
+		                 i++) {
+
+		                rainX[i] =
+		                        random.nextInt(1000);
+
+		                rainY[i] =
+		                        random.nextInt(400);
+		            }
+
+
+		            for (int i = 0;
+		                 i < snowX.length;
+		                 i++) {
+
+		                snowX[i] =
+		                        random.nextInt(1000);
+
+		                snowY[i] =
+		                        random.nextInt(400);
+		            }
+
+
+		            timer =
+		                    new Timer(
+		                            30,
+		                            e -> animate()
+		                    );
+
+		            timer.start();
+		        }
+
+
+		        void setWeather(
+		                int code
+		        ) {
+
+		            weatherCode = code;
+
+		            repaint();
+		        }
+
+
+		        void animate() {
+
+		            cloudMove += 1;
+
+		            if (cloudMove > 1000) {
+
+		                cloudMove = 0;
+		            }
+
+
+		            sunAngle += 0.05;
+
+
+		            // Rain movement
+		            if (isRain()) {
+
+		                for (int i = 0;
+		                     i < rainY.length;
+		                     i++) {
+
+		                    rainY[i] += 12;
+
+		                    rainX[i] -= 2;
+
+
+		                    if (rainY[i] > getHeight()) {
+
+		                        rainY[i] =
+		                                -10;
+
+		                        rainX[i] =
+		                                random.nextInt(
+		                                        Math.max(
+		                                                getWidth(),
+		                                                1
+		                                        )
+		                                );
+		                    }
+		                }
+		            }
+
+
+		            // Snow movement
+		            if (isSnow()) {
+
+		                for (int i = 0;
+		                     i < snowY.length;
+		                     i++) {
+
+		                    snowY[i] += 3;
+
+		                    snowX[i] +=
+		                            (int)
+		                            (
+		                                    Math.sin(
+		                                            snowY[i]
+		                                                    * 0.02
+		                                    )
+		                                    * 1.5
+		                            );
+
+
+		                    if (snowY[i]
+		                            > getHeight()) {
+
+		                        snowY[i] =
+		                                -10;
+
+		                        snowX[i] =
+		                                random.nextInt(
+		                                        Math.max(
+		                                                getWidth(),
+		                                                1
+		                                        )
+		                                );
+		                    }
+		                }
+		            }
+
+
+		            // Lightning
+		            if (isThunder()
+		                    && random.nextInt(100)
+		                    < 3) {
+
+		                lightning = true;
+
+		            } else {
+
+		                lightning = false;
+		            }
+
+
+		            repaint();
+		        }
+
+
+		        // =====================================================
+		        // PAINT
+		        // =====================================================
+
+		        @Override
+		        protected void paintComponent(
+		                Graphics g
+		        ) {
+
+		            super.paintComponent(g);
+
+
+		            Graphics2D g2 =
+		                    (Graphics2D) g.create();
+
+
+		            int width =
+		                    getWidth();
+
+		            int height =
+		                    getHeight();
+
+
+		            // Background
+		            GradientPaint background;
+
+
+		            if (isRain()
+		                    || isThunder()
+		                    || isCloudy()
+		                    || isFog()) {
+
+		                background =
+		                        new GradientPaint(
+		                                0,
+		                                0,
+		                                new Color(
+		                                        100,
+		                                        130,
+		                                        160
+		                                ),
+		                                0,
+		                                height,
+		                                new Color(
+		                                        210,
+		                                        225,
+		                                        235
+		                                )
+		                        );
+
+		            } else {
+
+		                background =
+		                        new GradientPaint(
+		                                0,
+		                                0,
+		                                new Color(
+		                                        70,
+		                                        170,
+		                                        240
+		                                ),
+		                                0,
+		                                height,
+		                                new Color(
+		                                        220,
+		                                        245,
+		                                        255
+		                                )
+		                        );
+		            }
+
+
+		            g2.setPaint(background);
+
+		            g2.fillRect(
+		                    0,
+		                    0,
+		                    width,
+		                    height
+		            );
+
+
+		            // -------------------------------------------------
+		            // SUN
+		            // -------------------------------------------------
+
+		            if (isSunny()) {
+
+		                drawSun(
+		                        g2,
+		                        width - 150,
+		                        100
+		                );
+		            }
+
+
+		            // -------------------------------------------------
+		            // CLOUDS
+		            // -------------------------------------------------
+
+		            if (isCloudy()
+		                    || isRain()
+		                    || isThunder()
+		                    || isSnow()
+		                    || isFog()) {
+
+		                drawClouds(
+		                        g2,
+		                        width
+		                );
+		            }
+
+
+		            // -------------------------------------------------
+		            // RAIN
+		            // -------------------------------------------------
+
+		            if (isRain()
+		                    || isThunder()) {
+
+		                drawRain(g2);
+		            }
+
+
+		            // -------------------------------------------------
+		            // SNOW
+		            // -------------------------------------------------
+
+		            if (isSnow()) {
+
+		                drawSnow(g2);
+		            }
+
+
+		            // -------------------------------------------------
+		            // FOG
+		            // -------------------------------------------------
+
+		            if (isFog()) {
+
+		                drawFog(
+		                        g2,
+		                        width,
+		                        height
+		                );
+		            }
+
+
+		            // -------------------------------------------------
+		            // LIGHTNING
+		            // -------------------------------------------------
+
+		            if (isThunder()
+		                    && lightning) {
+
+		                drawLightning(
+		                        g2,
+		                        width / 2,
+		                        80
+		                );
+		            }
+
+
+		            // -------------------------------------------------
+		            // CONDITION TEXT
+		            // -------------------------------------------------
+
+		            g2.setFont(
+		                    new Font(
+		                            "Arial",
+		                            Font.BOLD,
+		                            32
+		                    )
+		            );
+
+		            g2.setColor(
+		                    new Color(
+		                            255,
+		                            255,
+		                            255,
+		                            220
+		                    )
+		            );
+
+
+		            String text =
+		                    getCondition(
+		                            weatherCode
+		                    );
+
+
+		            FontMetrics fm =
+		                    g2.getFontMetrics();
+
+
+		            int textX =
+		                    (width
+		                            - fm.stringWidth(text))
+		                            / 2;
+
+
+		            g2.drawString(
+		                    text,
+		                    textX,
+		                    height - 30
+		            );
+
+
+		            g2.dispose();
+		        }
+
+
+		        // =====================================================
+		        // DRAW SUN
+		        // =====================================================
+
+		        void drawSun(
+		                Graphics2D g,
+		                int x,
+		                int y
+		        ) {
+
+
+		            g.setColor(
+		                    new Color(
+		                            255,
+		                            210,
+		                            50
+		                    )
+		            );
+
+
+		            g.fillOval(
+		                    x - 45,
+		                    y - 45,
+		                    90,
+		                    90
+		            );
+
+
+		            g.setColor(
+		                    new Color(
+		                            255,
+		                            230,
+		                            80
+		                    )
+		            );
+
+
+		            for (int i = 0;
+		                 i < 12;
+		                 i++) {
+
+		                double angle =
+		                        sunAngle
+		                        + (i * Math.PI / 6);
+
+
+		                int x1 =
+		                        x
+		                        + (int)
+		                        (Math.cos(angle) * 60);
+
+
+		                int y1 =
+		                        y
+		                        + (int)
+		                        (Math.sin(angle) * 60);
+
+
+		                int x2 =
+		                        x
+		                        + (int)
+		                        (Math.cos(angle) * 85);
+
+
+		                int y2 =
+		                        y
+		                        + (int)
+		                        (Math.sin(angle) * 85);
+
+
+		                g.setStroke(
+		                        new BasicStroke(
+		                                5
+		                        )
+		                );
+
+
+		                g.drawLine(
+		                        x1,
+		                        y1,
+		                        x2,
+		                        y2
+		                );
+		            }
+		        }
+
+
+		        // =====================================================
+		        // DRAW CLOUDS
+		        // =====================================================
+
+		        void drawClouds(
+		                Graphics2D g,
+		                int width
+		        ) {
+
+
+		            int x1 =
+		                    (cloudMove % (width + 300))
+		                    - 300;
+
+
+		            drawCloud(
+		                    g,
+		                    x1,
+		                    90
+		            );
+
+
+		            drawCloud(
+		                    g,
+		                    x1 + 350,
+		                    160
+		            );
+
+
+		            drawCloud(
+		                    g,
+		                    x1 + 700,
+		                    70
+		            );
+		        }
+
+
+		        void drawCloud(
+		                Graphics2D g,
+		                int x,
+		                int y
+		        ) {
+
+
+		            g.setColor(
+		                    new Color(
+		                            245,
+		                            245,
+		                            250,
+		                            235
+		                    )
+		            );
+
+
+		            g.fillOval(
+		                    x,
+		                    y + 20,
+		                    100,
+		                    55
+		            );
+
+
+		            g.fillOval(
+		                    x + 45,
+		                    y,
+		                    90,
+		                    70
+		            );
+
+
+		            g.fillOval(
+		                    x + 95,
+		                    y + 20,
+		                    100,
+		                    55
+		            );
+
+
+		            g.fillRoundRect(
+		                    x + 25,
+		                    y + 35,
+		                    150,
+		                    45,
+		                    25,
+		                    25
+		            );
+		        }
+
+
+		        // =====================================================
+		        // DRAW RAIN
+		        // =====================================================
+
+		        void drawRain(
+		                Graphics2D g
+		        ) {
+
+
+		            g.setColor(
+		                    new Color(
+		                            180,
+		                            220,
+		                            255,
+		                            200
+		                    )
+		            );
+
+
+		            g.setStroke(
+		                    new BasicStroke(
+		                            2
+		                    )
+		            );
+
+
+		            for (int i = 0;
+		                 i < rainX.length;
+		                 i++) {
+
+		                g.drawLine(
+		                        rainX[i],
+		                        rainY[i],
+		                        rainX[i] - 5,
+		                        rainY[i] + 18
+		                );
+		            }
+		        }
+
+
+		        // =====================================================
+		        // DRAW SNOW
+		        // =====================================================
+
+		        void drawSnow(
+		                Graphics2D g
+		        ) {
+
+
+		            g.setColor(
+		                    Color.WHITE
+		            );
+
+
+		            for (int i = 0;
+		                 i < snowX.length;
+		                 i++) {
+
+		                int size =
+		                        5
+		                        + random.nextInt(5);
+
+
+		                g.fillOval(
+		                        snowX[i],
+		                        snowY[i],
+		                        size,
+		                        size
+		                );
+		            }
+		        }
+
+
+		        // =====================================================
+		        // DRAW FOG
+		        // =====================================================
+
+		        void drawFog(
+		                Graphics2D g,
+		                int width,
+		                int height
+		        ) {
+
+
+		            g.setColor(
+		                    new Color(
+		                            230,
+		                            235,
+		                            235,
+		                            100
+		                    )
+		            );
+
+
+		            for (int y = 180;
+		                 y < height;
+		                 y += 55) {
+
+		                g.fillRoundRect(
+		                        -50,
+		                        y,
+		                        width + 100,
+		                        25,
+		                        20,
+		                        20
+		                );
+		            }
+		        }
+
+
+		        // =====================================================
+		        // DRAW LIGHTNING
+		        // =====================================================
+
+		        void drawLightning(
+		                Graphics2D g,
+		                int x,
+		                int y
+		        ) {
+
+
+		            Polygon bolt =
+		                    new Polygon();
+
+
+		            bolt.addPoint(
+		                    x,
+		                    y
+		            );
+
+		            bolt.addPoint(
+		                    x - 30,
+		                    y + 70
+		            );
+
+		            bolt.addPoint(
+		                    x - 5,
+		                    y + 70
+		            );
+
+		            bolt.addPoint(
+		                    x - 45,
+		                    y + 145
+		            );
+
+		            bolt.addPoint(
+		                    x + 25,
+		                    y + 55
+		            );
+
+		            bolt.addPoint(
+		                    x,
+		                    y + 55
+		            );
+
+
+		            g.setColor(
+		                    new Color(
+		                            255,
+		                            240,
+		                            80
+		                    )
+		            );
+
+
+		            g.fillPolygon(
+		                    bolt
+		            );
+		        }
+
+
+		        // =====================================================
+		        // CONDITION CHECKS
+		        // =====================================================
+
+		        boolean isSunny() {
+
+		            return weatherCode == 0;
+		        }
+
+
+		        boolean isCloudy() {
+
+		            return weatherCode >= 1
+		                    && weatherCode <= 3;
+		        }
+
+
+		        boolean isFog() {
+
+		            return weatherCode == 45
+		                    || weatherCode == 48;
+		        }
+
+
+		        boolean isRain() {
+
+		            return (
+		                    weatherCode >= 51
+		                    && weatherCode <= 67
+		            )
+		                    ||
+		                    (
+		                            weatherCode >= 80
+		                            && weatherCode <= 82
+		                    );
+		        }
+
+
+		        boolean isSnow() {
+
+		            return (
+		                    weatherCode >= 71
+		                    && weatherCode <= 77
+		            )
+		                    ||
+		                    weatherCode == 85
+		                    ||
+		                    weatherCode == 86;
+		        }
+
+
+		        boolean isThunder() {
+
+		            return weatherCode >= 95
+		                    && weatherCode <= 99;
+		        }
+		    }
+
+	}
+
+
